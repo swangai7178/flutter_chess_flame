@@ -71,7 +71,7 @@ class ChessGame extends FlameGame with TapDetector {
 
     // Highlight selected piece
     if (selectedPiecePosition != null) {
-      final highlightPaint = Paint()..color = Colors.yellow.withOpacity(0.5);
+      final highlightPaint = Paint()..color = Colors.yellow;
       canvas.drawRect(
         Rect.fromLTWH(
           offsetX + selectedPiecePosition!.x * squareSize,
