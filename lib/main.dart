@@ -27,7 +27,10 @@ class ChessGame extends FlameGame with TapDetector {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    final squareSize = size.x / boardSize;
+    final squareSize = (size.x < size.y ? size.x : size.y) / boardSize;
+    final offsetX = (size.x - squareSize * boardSize) / 2;
+    final offsetY = (size.y - squareSize * boardSize) / 2;
+
     final paintWhite = Paint()..color = const Color(0xFFF0D9B5);
     final paintBlack = Paint()..color = const Color(0xFFB58863);
 
@@ -37,7 +40,12 @@ class ChessGame extends FlameGame with TapDetector {
         final isWhite = (row + col) % 2 == 0;
         final paint = isWhite ? paintWhite : paintBlack;
         canvas.drawRect(
-          Rect.fromLTWH(col * squareSize, row * squareSize, squareSize, squareSize),
+          Rect.fromLTWH(
+            offsetX + col * squareSize,
+            offsetY + row * squareSize,
+            squareSize,
+            squareSize,
+          ),
           paint,
         );
       }
@@ -48,8 +56,8 @@ class ChessGame extends FlameGame with TapDetector {
       final highlightPaint = Paint()..color = Colors.yellow.withOpacity(0.5);
       canvas.drawRect(
         Rect.fromLTWH(
-          selectedPiecePosition!.x * squareSize,
-          selectedPiecePosition!.y * squareSize,
+          offsetX + selectedPiecePosition!.x * squareSize,
+          offsetY + selectedPiecePosition!.y * squareSize,
           squareSize,
           squareSize,
         ),
@@ -59,7 +67,10 @@ class ChessGame extends FlameGame with TapDetector {
 
     // Draw white king at its current position
     final kingSize = Vector2(squareSize, squareSize);
-    final kingPos = Vector2(kingPosition.x * squareSize, kingPosition.y * squareSize);
+    final kingPos = Vector2(
+      offsetX + kingPosition.x * squareSize,
+      offsetY + kingPosition.y * squareSize,
+    );
     whiteKing.render(canvas, position: kingPos, size: kingSize);
 
     // Render error message if it exists
@@ -77,10 +88,19 @@ class ChessGame extends FlameGame with TapDetector {
 
   @override
   void onTapDown(TapDownInfo info) {
-    final squareSize = size.x / boardSize;
+    final squareSize = (size.x < size.y ? size.x : size.y) / boardSize;
+    final offsetX = (size.x - squareSize * boardSize) / 2;
+    final offsetY = (size.y - squareSize * boardSize) / 2;
+
     final pos = info.eventPosition.global;
-    final col = (pos.x / squareSize).floor();
-    final row = (pos.y / squareSize).floor();
+    final col = ((pos.x - offsetX) / squareSize).floor();
+    final row = ((pos.y - offsetY) / squareSize).floor();
+
+    if (col < 0 || col >= boardSize || row < 0 || row >= boardSize) {
+      errorMessage = 'Tapped outside the board';
+      print('Tapped outside the board');
+      return;
+    }
 
     final tappedPosition = Vector2(col.toDouble(), row.toDouble());
 
