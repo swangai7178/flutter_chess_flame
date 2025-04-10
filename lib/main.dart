@@ -11,16 +11,34 @@ void main() {
 
 
 class ChessGame extends FlameGame with TapDetector {
-  late Sprite whiteKing;
+  late Sprite whiteKing, whiteQueen, whiteRook, whiteBishop, whiteKnight, whitePawn;
   final int boardSize = 8;
   Vector2? selectedPiecePosition; // To store the selected piece position
-  Vector2 kingPosition = Vector2(4, 7); // Initial position of the king (e1)
+  Map<Vector2, String> pieces = {}; // To store pieces and their positions
   String? errorMessage; // To store error messages
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
     whiteKing = await loadSprite('whiteking.png');
+    whiteQueen = await loadSprite('whitequeen.png');
+    whiteRook = await loadSprite('whiterook.png');
+    whiteBishop = await loadSprite('whitebishop.png');
+    whiteKnight = await loadSprite('whiteknight.png');
+    whitePawn = await loadSprite('whitepawn.png');
+
+    // Initialize pieces
+    pieces[Vector2(4, 7)] = 'king'; // e1
+    pieces[Vector2(3, 7)] = 'queen'; // d1
+    pieces[Vector2(0, 7)] = 'rook'; // a1
+    pieces[Vector2(7, 7)] = 'rook'; // h1
+    pieces[Vector2(2, 7)] = 'bishop'; // c1
+    pieces[Vector2(5, 7)] = 'bishop'; // f1
+    pieces[Vector2(1, 7)] = 'knight'; // b1
+    pieces[Vector2(6, 7)] = 'knight'; // g1
+    for (int i = 0; i < boardSize; i++) {
+      pieces[Vector2(i.toDouble(), 6)] = 'pawn'; // pawns on row 6
+    }
   }
 
   @override
@@ -65,13 +83,29 @@ class ChessGame extends FlameGame with TapDetector {
       );
     }
 
-    // Draw white king at its current position
-    final kingSize = Vector2(squareSize, squareSize);
-    final kingPos = Vector2(
-      offsetX + kingPosition.x * squareSize,
-      offsetY + kingPosition.y * squareSize,
-    );
-    whiteKing.render(canvas, position: kingPos, size: kingSize);
+    // Draw pieces
+    final pieceSprites = {
+      'king': whiteKing,
+      'queen': whiteQueen,
+      'rook': whiteRook,
+      'bishop': whiteBishop,
+      'knight': whiteKnight,
+      'pawn': whitePawn,
+    };
+
+    for (final entry in pieces.entries) {
+      final position = entry.key;
+      final piece = entry.value;
+      final sprite = pieceSprites[piece];
+      if (sprite != null) {
+        final pieceSize = Vector2(squareSize, squareSize);
+        final piecePos = Vector2(
+          offsetX + position.x * squareSize,
+          offsetY + position.y * squareSize,
+        );
+        sprite.render(canvas, position: piecePos, size: pieceSize);
+      }
+    }
 
     // Render error message if it exists
     if (errorMessage != null) {
@@ -106,30 +140,54 @@ class ChessGame extends FlameGame with TapDetector {
 
     // If no piece is selected, select the piece
     if (selectedPiecePosition == null) {
-      if (tappedPosition == kingPosition) {
-        selectedPiecePosition = kingPosition;
+      if (pieces.containsKey(tappedPosition)) {
+        selectedPiecePosition = tappedPosition;
         errorMessage = null; // Clear error message
-        print('Selected king at square: $row, $col');
+        print('Selected piece at square: $row, $col');
       } else {
         errorMessage = 'No piece at the selected square';
         print('No piece at the selected square');
       }
     } else {
       // If a piece is already selected, attempt to move it
-      if (selectedPiecePosition == kingPosition) {
-        final dx = (col - kingPosition.x).abs();
-        final dy = (row - kingPosition.y).abs();
+      final selectedPiece = pieces[selectedPiecePosition];
+      if (selectedPiece != null) {
+        final dx = (col - selectedPiecePosition!.x).abs();
+        final dy = (row - selectedPiecePosition!.y).abs();
 
-        // Check if the move is valid for a king (one square in any direction)
-        if ((dx <= 1 && dy <= 1) && !(dx == 0 && dy == 0)) {
-          // Update king's position
-          kingPosition = tappedPosition;
+        bool isValidMove = false;
+
+        switch (selectedPiece) {
+          case 'king':
+            isValidMove = (dx <= 1 && dy <= 1) && !(dx == 0 && dy == 0);
+            break;
+          case 'queen':
+            isValidMove = (dx == dy || dx == 0 || dy == 0);
+            break;
+          case 'rook':
+            isValidMove = (dx == 0 || dy == 0);
+            break;
+          case 'bishop':
+            isValidMove = (dx == dy);
+            break;
+          case 'knight':
+            isValidMove = (dx == 2 && dy == 1) || (dx == 1 && dy == 2);
+            break;
+          case 'pawn':
+            isValidMove = (dy == 1 && dx == 0 && row < selectedPiecePosition!.y);
+            break;
+        }
+
+        if (isValidMove) {
+          // Update piece's position
+          pieces.remove(selectedPiecePosition);
+          pieces[tappedPosition] = selectedPiece;
           selectedPiecePosition = null; // Deselect the piece
           errorMessage = null; // Clear error message
-          print('Moved king to square: $row, $col');
+          print('Moved $selectedPiece to square: $row, $col');
         } else {
-          errorMessage = 'Invalid move for a king';
-          print('Invalid move for a king');
+          errorMessage = 'Invalid move for $selectedPiece';
+          print('Invalid move for $selectedPiece');
         }
       }
     }
