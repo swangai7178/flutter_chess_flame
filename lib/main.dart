@@ -179,7 +179,7 @@ class ChessGame extends FlameGame with TapDetector {
         }
 
         if (isValidMove) {
-          // Update piece's position
+
           pieces.remove(selectedPiecePosition);
           pieces[tappedPosition] = selectedPiece;
           selectedPiecePosition = null; // Deselect the piece
